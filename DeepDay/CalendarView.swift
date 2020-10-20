@@ -24,7 +24,7 @@ struct CalendarView: View {
                         .position(x: timelineGeo.frame(in: .local).origin.x + timelineGeo.size.width / 2 - (self.timelineHeight / 2),
                                   y: timelineGeo.size.height / 2)
                         .onAppear {
-                            self.viewModel.timelineTranslator.updateHeight(to: timelineGeo.size.height - self.timelineHeight)
+                            self.viewModel.timelineTranslator.timelineHeight = timelineGeo.size.height - self.timelineHeight
                             self.viewModel.timelineRect = timelineGeo.frame(in: .global)
                         }
                 }
@@ -90,7 +90,7 @@ struct TimeLine: View {
         }
     }
 }
-var c = 0
+
 struct TimeBlocks: View {
     @EnvironmentObject var viewModel: ViewModel
     @GestureState var isPotentialEventLongPress = false

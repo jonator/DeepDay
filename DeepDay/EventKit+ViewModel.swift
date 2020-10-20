@@ -33,24 +33,17 @@ extension EKReminder {
 extension EKEvent {
     var date: Date { startDate }
 
-    var startSeconds: Int { EKEvent.dateToSecondsIntoDay(startDate) }
+    var startSeconds: Int { startDate.secondsIntoDay }
 
-    var endSeconds: Int { EKEvent.dateToSecondsIntoDay(endDate) }
+    var endSeconds: Int { endDate.secondsIntoDay }
 
     var content: String? { notes }
 
-    var activityType: ActivityType { // TODO: get from registry
+    var activityType: ActivityType { // TODO: get from core data
         get {
             return .shallow
         }
         set {}
-    }
-
-    private class func dateToSecondsIntoDay(_ date: Date) -> Int {
-        var calendar = Calendar.current
-        calendar.timeZone = NSTimeZone.local
-        let startOfDay = calendar.startOfDay(for: date)
-        return Int(date.timeIntervalSince(startOfDay))
     }
 }
 

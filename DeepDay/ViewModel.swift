@@ -155,12 +155,6 @@ class ViewModel: ObservableObject {
             state = .idle
         }
     }
-    
-    func transformToDoDrag(by transform: CGSize) {
-        if case .draggingItem(let id, startPoint: let start, offSet: let offset, sizeMod: let sizeMod, offSetMod: _, boundScrolledTo: let bounds) = state {
-            state = .draggingItem(id, startPoint: start, offSet: offset, sizeMod: sizeMod, offSetMod: transform, boundScrolledTo: bounds)
-        }
-    }
 
     func itemDropped(_ id: String, _ point: CGPoint) {
         switch state {
@@ -347,18 +341,6 @@ class ViewModel: ObservableObject {
         }
     }
     
-    func changeToDo(activityType: ActivityType) {
-        if case .toDoSelected(let id) = state {
-            model.updateActivityType(forToDoOf: id, to: activityType)
-        }
-    }
-    
-    func changeEvent(activityType: ActivityType) {
-        if case .eventSelected(let id) = state {
-            model.updateActivityType(forEventOf: id, to: activityType)
-        }
-    }
-    
     func selectEvent(of id: String) {
         if case .idle = state {
             state = .eventSelected(id)
@@ -496,11 +478,13 @@ class ViewModel: ObservableObject {
         }
         
         for (i, _) in events.enumerated() {
-            if i < events.count - 2, enoughTime(events[i].endSeconds, events[i + 1].startSeconds) {
+            if i < events.count - 2 {
                 let gapStart = events[i].endSeconds
                 let gapEnd = events[i + 1].startSeconds
-                let id = events[i].id + "," + events[i + 1].id
-                schedulableTimes.append(AvailableTime(id: id, startSeconds: gapStart, endSeconds: gapEnd))
+                if (enoughTime(gapStart, gapEnd)) {
+                    let id = events[i].id + "," + events[i + 1].id
+                    schedulableTimes.append(AvailableTime(id: id, startSeconds: gapStart, endSeconds: gapEnd))
+                }
             }
         }
         
@@ -536,7 +520,7 @@ class ViewModel: ObservableObject {
 }
 
 class TimelinePointTranslator {
-    private var timelineHeight: CGFloat?
+    var timelineHeight: CGFloat?
     private let sixAM: CGFloat = 60 * 60 * 6
     private let tenPM: CGFloat = 60 * 60 * 22
     private let sixteenHours: CGFloat = 60 * 60 * 16
@@ -544,10 +528,6 @@ class TimelinePointTranslator {
     enum Domain {
         case instant
         case timeInterval
-    }
-    
-    func updateHeight(to points: CGFloat) {
-        timelineHeight = points
     }
     
     func points(given seconds: Int, for height: CGFloat, by scenario: Domain) -> CGFloat {

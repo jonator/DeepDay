@@ -23,12 +23,12 @@ struct SelectedItemBottomSheet: View {
         BottomSheetView(isOpen: $viewModel.sheetPresented, maxHeight: UIScreen.main.bounds.height * 0.3) {
             if case .toDoSelected(let id) = viewModel.state {
                 if let todo = viewModel.attemptGetToDo(by: id) {
-                    ToDoDetail(todo: todo, onChangeActivityType: viewModel.changeToDo(activityType:))
+                    ToDoDetail(todo: todo, onChangeActivityType: { _ in return })
                 }
             }
             if case .eventSelected(let id) = viewModel.state {
                 if let event = viewModel.attemptGetEvent(by: id) {
-                    EventDetail(event: event, onChangeActivityType: viewModel.changeEvent(activityType:))
+                    EventDetail(event: event, onChangeActivityType: { _ in return })
                 }
             }
         }

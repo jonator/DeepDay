@@ -7,6 +7,15 @@
 
 import SwiftUI
 
+extension Date {
+    var secondsIntoDay: Int {
+        var calendar = Calendar.current
+        calendar.timeZone = NSTimeZone.local
+        let startOfDay = calendar.startOfDay(for: self)
+        return Int(self.timeIntervalSince(startOfDay))
+    }
+}
+
 extension View {
     func `if`<Content: View>(_ conditional: Bool, content: (Self) -> Content) -> some View {
         if conditional {

@@ -111,7 +111,6 @@ class Model: ObservableObject {
     #endif
 }
 
-var count = 0
 extension Model: DataProviderDelegate {
     func receive(events: [EKEvent]) {
         self.events = Dictionary(zip(events.map(\.id), events), uniquingKeysWith: { a, _ in a })
