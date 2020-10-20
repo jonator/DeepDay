@@ -14,6 +14,13 @@ struct CalendarView: View {
     
     @EnvironmentObject var viewModel: ViewModel
     
+    var showCurrentTimeline: Bool {
+        if case .chooseEventDuration = viewModel.state {
+            return false
+        }
+        return true
+    }
+    
     var body: some View {
         TimeLines(height: timelineHeight, spacing: timelineSpacing)
             .overlay(
@@ -27,8 +34,18 @@ struct CalendarView: View {
                             self.viewModel.timelineTranslator.timelineHeight = timelineGeo.size.height - self.timelineHeight
                             self.viewModel.timelineRect = timelineGeo.frame(in: .global)
                         }
+                    if showCurrentTimeline {
+                        self.viewOfCurrentTimeline(sized: CGSize(width: timelineGeo.size.width, height: timelineGeo.size.height - self.timelineHeight))
+                    }
                 }
             )
+    }
+    
+    private func viewOfCurrentTimeline(sized size: CGSize) -> some View {
+        Rectangle().fill(Color.red)
+            .frame(width: size.width, height: 1)
+            .position(x: size.width / 2, y: viewModel.timelineTranslator.points(given: Date().secondsIntoDay, for: size.height, by: .instant))
+            .id("currentTime")
     }
 }
 

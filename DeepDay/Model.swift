@@ -30,14 +30,6 @@ class Model: ObservableObject {
         return todos[id]
     }
     
-    func add(reminder: EKReminder) {
-        todos[reminder.id] = reminder
-    }
-    
-    private func removeToDo(by id: String) {
-        todos.removeValue(forKey: id)
-    }
-    
     // MARK: - events
     
     func events(on day: Date) -> [EKEvent] {
@@ -51,10 +43,6 @@ class Model: ObservableObject {
     
     func getEvent(by id: String) -> EKEvent? {
         return events[id]
-    }
-    
-    func add(toToday event: EKEvent) {
-        events[event.id] = event
     }
     
     // MARK: - scheduling
@@ -86,17 +74,6 @@ class Model: ObservableObject {
         emptyModel.dataProvider = provider
         return emptyModel
     }
-    
-    #if DEBUG
-//    private init(reminders: [EKReminder], todayEvents: [EKEvent]) {
-//        let todoKeys = reminders.map(\.id)
-//        self.todos = Dictionary(uniqueKeysWithValues: zip(todoKeys, reminders))
-//        let eventKeys = todayEvents.map(\.id)
-//        events = Dictionary(uniqueKeysWithValues: zip(eventKeys, todayEvents))
-//    }
-//
-//    static func mock() -> Model { Model(todos: MockCalendar.todos, todayEvents: MockCalendar.events) }
-    #endif
 }
 
 extension Model: DataProviderDelegate {

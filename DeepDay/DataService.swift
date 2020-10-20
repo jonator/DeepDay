@@ -102,10 +102,4 @@ class DataService {
         let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMorning)!
         return store.predicateForEvents(withStart: thisMorning, end: nextMonth, calendars: nil)
     }
-    
-    // MARK: - object creation
-    
-    func createEvent(from reminder: EKReminder) -> Result<EKEvent, Error> {
-        return .failure(FetchError.deniedAccess)
-    }
 }

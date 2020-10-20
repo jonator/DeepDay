@@ -479,9 +479,6 @@ class ViewModel: ObservableObject {
             schedulableTimes.append(AvailableTime(id: events.first!.id, startSeconds: sixAM, endSeconds: events.first!.startSeconds))
         }
         
-        print("---")
-        events.forEach { print($0.title!, $0.startSeconds, $0.endSeconds) }
-        
         for (i, _) in events.enumerated() {
             if i < events.count - 2 {
                 let gapStart = events[i].endSeconds
@@ -496,8 +493,6 @@ class ViewModel: ObservableObject {
         if enoughTime(events.last?.endSeconds ?? tenPM, tenPM) {
             schedulableTimes.append(AvailableTime(id: events.last!.id, startSeconds: events.last!.endSeconds, endSeconds: tenPM))
         }
-        
-        print(schedulableTimes)
         
         return schedulableTimes
     }
