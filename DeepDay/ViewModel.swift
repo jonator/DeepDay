@@ -122,7 +122,9 @@ class ViewModel: ObservableObject {
                     state = .draggingItem(id, startPoint: dragStart, offSet: newOffset, sizeMod: dragTarget.size, offSetMod: offsetMod, boundScrolledTo: scrollBound)
                 }
             } else {
-                state = .draggingItem(id, startPoint: dragStart, offSet: newOffset, sizeMod: nil, offSetMod: offsetMod, boundScrolledTo: scrollBound)
+                withAnimation {
+                    state = .draggingItem(id, startPoint: dragStart, offSet: newOffset, sizeMod: nil, offSetMod: offsetMod, boundScrolledTo: scrollBound)
+                }
             }
             autoHorizontalScroll(considering: offsetMod)
             autoTimelineVertScroll(from: offsetPoint, vs: pointBy(startingAt: dragStart, movingBy: oldOffset))
@@ -477,6 +479,9 @@ class ViewModel: ObservableObject {
             schedulableTimes.append(AvailableTime(id: events.first!.id, startSeconds: sixAM, endSeconds: events.first!.startSeconds))
         }
         
+        print("---")
+        events.forEach { print($0.title!, $0.startSeconds, $0.endSeconds) }
+        
         for (i, _) in events.enumerated() {
             if i < events.count - 2 {
                 let gapStart = events[i].endSeconds
@@ -491,6 +496,8 @@ class ViewModel: ObservableObject {
         if enoughTime(events.last?.endSeconds ?? tenPM, tenPM) {
             schedulableTimes.append(AvailableTime(id: events.last!.id, startSeconds: events.last!.endSeconds, endSeconds: tenPM))
         }
+        
+        print(schedulableTimes)
         
         return schedulableTimes
     }

@@ -36,6 +36,8 @@ extension EKEvent {
     var startSeconds: Int { startDate.secondsIntoDay }
 
     var endSeconds: Int { endDate.secondsIntoDay }
+    
+    var timeInterval: TimeInterval { TimeInterval(endSeconds - startSeconds) }
 
     var content: String? { notes }
 

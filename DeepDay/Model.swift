@@ -34,12 +34,6 @@ class Model: ObservableObject {
         todos[reminder.id] = reminder
     }
     
-    func updateActivityType(forToDoOf id: String, to activityType: ActivityType) {
-        if var todo = todos[id] {
-//            todo = todo.setActivityType(to: activityType)
-        }
-    }
-    
     private func removeToDo(by id: String) {
         todos.removeValue(forKey: id)
     }
@@ -52,7 +46,7 @@ class Model: ObservableObject {
         
         return
             [EKEvent](events.filter { _, event in dayInterval?.contains(event.date) ?? false }.values)
-                .sorted(by: { $0.startSeconds < $1.startSeconds })
+                .sorted(by: { $0.startSeconds == $1.startSeconds ? $0.timeInterval < $1.timeInterval : $0.startSeconds < $1.startSeconds })
     }
     
     func getEvent(by id: String) -> EKEvent? {
@@ -61,12 +55,6 @@ class Model: ObservableObject {
     
     func add(toToday event: EKEvent) {
         events[event.id] = event
-    }
-    
-    func updateActivityType(forEventOf id: String, to activityType: ActivityType) {
-        if var event = events[id] {
-//            event = event.setActivityType(to: activityType)
-        }
     }
     
     // MARK: - scheduling
