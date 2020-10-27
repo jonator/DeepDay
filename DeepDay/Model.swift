@@ -48,13 +48,12 @@ class Model: ObservableObject {
     // MARK: - scheduling
     
     func scheduleEvent(fromToDo id: String, from start: Int, to end: Int) {
-//        if let todo = getToDo(by: id) {
-//            add(toToday: Event(startSeconds: start,
-//                               endSeconds: end,
-//                               title: todo.text,
-//                               activityType: todo.activityType))
-//            removeToDo(by: id)
-//        }
+        if let todo = getToDo(by: id), let dp = dataProvider {
+            let now = Date()
+            let start = now.dateFromSecondsIntoToday(seconds: start)
+            let end = now.dateFromSecondsIntoToday(seconds: end)
+            dp.createEvent(titled: todo.title, startDate: start, endDate: end)
+        }
     }
     
     // MARK: - init

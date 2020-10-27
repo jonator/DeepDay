@@ -15,10 +15,8 @@ class ViewModel: ObservableObject {
         case idle
         case draggingItem(String,
                           startPoint: CGPoint,
-                          offSet: CGSize,
-                          sizeMod: CGSize?,
-                          offSetMod: CGSize?,
-                          boundScrolledTo: (Bool, Bool))
+                          point: CGPoint,
+                          sizeMod: CGSize?)
         case chooseEventDuration(todoID: String,
                                  startSeconds: Int,
                                  endSeconds: Int,
@@ -43,12 +41,18 @@ class ViewModel: ObservableObject {
         }
     }
 
-    @Published var timelineContentOffset: CGFloat = .zero
-
     var horizontalScrollOffset = CGFloat.zero
     private let model: Model
     var timelineTranslator = TimelinePointTranslator()
-    var timelineRect: CGRect?
+    var didScrollToCurrentTime = false
+    var timelineRect: CGRect? {
+        didSet {
+            if !didScrollToCurrentTime {
+                schedulerScrollProxy?.scrollTo("future", anchor: .top)
+                didScrollToCurrentTime = true
+            }
+        }
+    }
     var schedulerScrollProxy: ScrollViewProxy?
     private(set) var itemAreas = [String: CGRect]()
     
@@ -103,31 +107,25 @@ class ViewModel: ObservableObject {
     
     // MARK: - > scheduling event
     
-    func itemDragged(_ id: String, _ dragPoint: CGPoint, _ dragStart: CGPoint) {
+    func itemDragged(_ id: String, _ point: CGPoint, _ dragStart: CGPoint) {
         switch state {
         case .idle:
-            if model.hasToDo(of: id) {
-                let dragSize = CGSize(width: dragPoint.x - dragStart.x, height: dragPoint.y - dragStart.y)
-                state = .draggingItem(id, startPoint: dragStart, offSet: dragSize, sizeMod: nil, offSetMod: nil, boundScrolledTo: (false, false))
-            }
+            state = .draggingItem(id, startPoint: dragStart, point: point, sizeMod: nil)
             
-        case .draggingItem(_, _, offSet: let oldOffset, sizeMod: _, offSetMod: let offsetMod, boundScrolledTo: let scrollBound):
+        case .draggingItem(_, _, point: let prevPoint, sizeMod: _):
             // ios: x and y positive
-            let dragSize = sizeBetween(pointA: dragPoint, minus: dragStart)
-            let newOffset = newSize(from: dragSize, potentiallyApplying: offsetMod)
-            let offsetPoint = pointBy(startingAt: dragStart, movingBy: newOffset)
-            if let availTimeID = item(potentiallyHitBy: offsetPoint) {
+            if let availTimeID = item(potentiallyHitBy: point) {
                 let dragTarget = itemAreas[availTimeID]!
                 withAnimation { // animating here keeps dragging and downsizing snappy, but upsizing smooth
-                    state = .draggingItem(id, startPoint: dragStart, offSet: newOffset, sizeMod: dragTarget.size, offSetMod: offsetMod, boundScrolledTo: scrollBound)
+                    state = .draggingItem(id, startPoint: dragStart, point: point, sizeMod: dragTarget.size)
                 }
             } else {
                 withAnimation {
-                    state = .draggingItem(id, startPoint: dragStart, offSet: newOffset, sizeMod: nil, offSetMod: offsetMod, boundScrolledTo: scrollBound)
+                    state = .draggingItem(id, startPoint: dragStart, point: point, sizeMod: nil)
                 }
             }
-            autoHorizontalScroll(considering: offsetMod)
-            autoTimelineVertScroll(from: offsetPoint, vs: pointBy(startingAt: dragStart, movingBy: oldOffset))
+            autoHScroll(from: point, vs: prevPoint)
+            autoTimelineVScroll(from: point, vs: prevPoint)
             
         case .chooseEventDuration(todoID: let todoID,
                                   startSeconds: let start,
@@ -136,7 +134,7 @@ class ViewModel: ObservableObject {
                                   endDelta: let endDelta,
                                   calendarBounds: let bounds, _):
             if attemptGetToDo(by: id) == nil {
-                let yDelta = -(dragStart.y - dragPoint.y)
+                let yDelta = -(dragStart.y - point.y)
                 let timeDelta = timelineTranslator.seconds(from: yDelta)
                 let (newStartDelta, newEndDelta) = updateDeltas(startDelta: timeDelta,
                                                                 endDelta: timeDelta,
@@ -160,11 +158,8 @@ class ViewModel: ObservableObject {
 
     func itemDropped(_ id: String, _ point: CGPoint) {
         switch state {
-        case .draggingItem(_, startPoint: let start, _, _, offSetMod: let offsetMod, _):
-            let dragSize = sizeBetween(pointA: point, minus: start)
-            let newOffset = newSize(from: dragSize, potentiallyApplying: offsetMod)
-            let offsetPoint = pointBy(startingAt: start, movingBy: newOffset)
-            if let itemID = item(potentiallyHitBy: offsetPoint) {
+        case .draggingItem:
+            if let itemID = item(potentiallyHitBy: point) {
                 if let todo = model.getToDo(by: id),
                    let availableTime = todaysAvailTimes.first(where: { $0.id == itemID })
                 {
@@ -283,46 +278,31 @@ class ViewModel: ObservableObject {
         }
     }
     
-    func autoHorizontalScroll(considering offsetMod: CGSize?) {
-        if isDragItemOffsetInTimeline(), offsetMod == nil {
-            if case .draggingItem(let id, let dragStart, offSet: let offset, sizeMod: let sizeMod, offSetMod: _, boundScrolledTo: let scrollBound) = state {
-                let offsetMod = CGSize(width: timelineRect!.midX - dragStart.x, height: 0)
-                
-                DispatchQueue.main.async {
-                    withAnimation {
-                        self.schedulerScrollProxy?.scrollTo("timeline")
-                        self.state = .draggingItem(id, startPoint: dragStart, offSet: offset, sizeMod: sizeMod, offSetMod: offsetMod, boundScrolledTo: scrollBound)
-                    }
+    func autoHScroll(from point: CGPoint, vs prevPoint: CGPoint) {
+        guard let timeline = timelineRect else { return }
+        if !timeline.contains(prevPoint) && timeline.contains(point) {
+            DispatchQueue.main.async {
+                withAnimation {
+                    self.schedulerScrollProxy?.scrollTo("timeline")
                 }
             }
         }
     }
     
-    func autoTimelineVertScroll(from offsetPoint: CGPoint, vs previousOffset: CGPoint) {
-        if isDragItemOffsetInTimeline() {
-            if case .draggingItem(let id, let dragStart, offSet: let offset, sizeMod: let sizeMod, offSetMod: let offsetMod, boundScrolledTo: let scrollBound) = state {
-                let screenSize = UIScreen.main.bounds
-                let screenDenominator: CGFloat = 8
-                let draggedToTop = { (p: CGPoint) in p.y < (screenSize.maxY / screenDenominator) }
-                let draggedToBottom = { (p: CGPoint) in p.y > (screenSize.maxY - (screenSize.maxY / screenDenominator)) }
-                let shouldInitiateTopScroll = !draggedToTop(previousOffset) && draggedToTop(offsetPoint)
-                let shouldInitiateBottomScroll = !draggedToBottom(previousOffset) && draggedToBottom(offsetPoint)
-                
-                // check if we need to scroll
-                if shouldInitiateTopScroll {
-                    self.state = .draggingItem(id, startPoint: dragStart, offSet: offset, sizeMod: sizeMod, offSetMod: offsetMod, boundScrolledTo: (true, false))
-                } else if shouldInitiateBottomScroll {
-                    self.state = .draggingItem(id, startPoint: dragStart, offSet: offset, sizeMod: sizeMod, offSetMod: offsetMod, boundScrolledTo: (false, true))
-                } else if scrollBound.0 || scrollBound.1 { // is in middle
-                    self.state = .draggingItem(id, startPoint: dragStart, offSet: offset, sizeMod: sizeMod, offSetMod: offsetMod, boundScrolledTo: (false, false))
-                }
+    func autoTimelineVScroll(from point: CGPoint, vs prevPoint: CGPoint) {
+        guard let timeline = timelineRect else { return }
+        if timeline.contains(point) {
+            let screenSize = UIScreen.main.bounds
+            let screenDenominator: CGFloat = 8
+            let draggedToTop = { (p: CGPoint) in p.y < (screenSize.maxY / screenDenominator) }
+            let draggedToBottom = { (p: CGPoint) in p.y > (screenSize.maxY - (screenSize.maxY / screenDenominator)) }
+            let shouldInitiateTopScroll = !draggedToTop(prevPoint) && draggedToTop(point)
+            let shouldInitiateBottomScroll = !draggedToBottom(prevPoint) && draggedToBottom(point)
 
-                // scroll if we needed to in the past
-                if scrollBound.0 {
-                    scrollTimeline(to: .top)
-                } else if scrollBound.1 {
-                    scrollTimeline(to: .bottom)
-                }
+            if shouldInitiateTopScroll {
+                scrollTimeline(to: .top)
+            } else if shouldInitiateBottomScroll {
+                scrollTimeline(to: .bottom)
             }
         }
     }
@@ -365,32 +345,12 @@ class ViewModel: ObservableObject {
     // MARK: - scheduling available time
     
     func updateArea(of id: String, to rect: CGRect) {
-        let availTimeAreaAlreadySet = todaysAvailTimes.contains(where: { $0.id == id })
-                                        && itemAreas.contains(where: { key, _ in key == id })
-        if availTimeAreaAlreadySet {
-            return
-        }
         itemAreas[id] = rect
     }
     
-    func isDragItemOffsetInTimeline() -> Bool {
-        if case .draggingItem(_, startPoint: let point, offSet: let offset, _, _, _) = state {
-            guard let timelineArea = timelineRect
-            else { return false }
-            if pointBy(startingAt: point, movingBy: offset).x >= timelineArea.minX - 30 {
-                return true
-            }
-        }
-        return false
-    }
-    
     private func item(potentiallyHitBy point: CGPoint) -> String? {
-        return itemAreas.first(where: { _, rect in
-            let timelineOffsetRect = CGRect(x: rect.origin.x,
-                                            y: rect.origin.y + timelineContentOffset,
-                                            width: rect.width,
-                                            height: rect.height)
-            return timelineOffsetRect.contains(point)
+        return itemAreas.first(where: { k, rect in
+            return rect.contains(point)
         })?.key
     }
     
@@ -472,11 +432,22 @@ class ViewModel: ObservableObject {
     }
     
     private class func availableTimes(in events: [EKEvent]) -> [AvailableTime] {
-        let enoughTime = { (start: Int, end: Int) in end - start > halfHour }
         var schedulableTimes: [AvailableTime] = []
+        let curTime = Date().secondsIntoDay
+        let enoughTime = { (start: Int, end: Int) in end - start > halfHour }
+        let appendTime = { (id: String, start: Int, end: Int) in
+            var s = start
+            if end < curTime {
+                return
+            }
+            if curTime >= start && curTime < end && enoughTime(curTime, end) {
+                s = curTime
+            }
+            schedulableTimes.append(AvailableTime(id: id, startSeconds: s, endSeconds: end))
+        }
         
         if enoughTime(sixAM, events.first?.startSeconds ?? sixAM) {
-            schedulableTimes.append(AvailableTime(id: events.first!.id, startSeconds: sixAM, endSeconds: events.first!.startSeconds))
+            appendTime(events.first!.id, sixAM, events.first!.startSeconds)
         }
         
         for (i, _) in events.enumerated() {
@@ -485,13 +456,13 @@ class ViewModel: ObservableObject {
                 let gapEnd = events[i + 1].startSeconds
                 if (enoughTime(gapStart, gapEnd)) {
                     let id = events[i].id + "," + events[i + 1].id
-                    schedulableTimes.append(AvailableTime(id: id, startSeconds: gapStart, endSeconds: gapEnd))
+                    appendTime(id, gapStart, gapEnd)
                 }
             }
         }
         
         if enoughTime(events.last?.endSeconds ?? tenPM, tenPM) {
-            schedulableTimes.append(AvailableTime(id: events.last!.id, startSeconds: events.last!.endSeconds, endSeconds: tenPM))
+            appendTime(events.last!.id, events.last!.endSeconds, tenPM)
         }
         
         return schedulableTimes

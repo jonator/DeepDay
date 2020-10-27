@@ -122,7 +122,7 @@ struct DragToDoPlaceholder: View {
 
     var size: CGSize {
         var size = CGSize.zero
-        if case .draggingItem(_, _, _, sizeMod: let sizemod, _, _) = viewModel.state {
+        if case .draggingItem(_, _, _, sizeMod: let sizemod) = viewModel.state {
             if let mod = sizemod {
                 size = CGSize(width: mod.width / scaleAmount, height: mod.height / scaleAmount)
             }
@@ -142,6 +142,6 @@ struct DragToDoPlaceholder: View {
 
 struct ToDos_Previews: PreviewProvider {
     static var previews: some View {
-        ToDosView(todos: [] /* MockCalendar.todos */ )
+        ToDosView(todos: [])
     }
 }

@@ -14,6 +14,14 @@ extension Date {
         let startOfDay = calendar.startOfDay(for: self)
         return Int(self.timeIntervalSince(startOfDay))
     }
+    
+    func dateFromSecondsIntoToday(seconds: Int) -> Date {
+        var calendar = Calendar.current
+        calendar.timeZone = NSTimeZone.local
+        let startOfDay = calendar.startOfDay(for: self)
+        let elapsedTime = TimeInterval(seconds)
+        return startOfDay.addingTimeInterval(elapsedTime)
+    }
 }
 
 extension View {

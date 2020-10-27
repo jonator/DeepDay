@@ -13,12 +13,39 @@ struct CalendarView: View {
     let timelineSpacing = CGFloat(90)
     
     @EnvironmentObject var viewModel: ViewModel
+    @State var currentTimeSeconds: Int = Date().secondsIntoDay
+    let timeChange = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    var showCurrentTimeline: Bool {
+    var showCurrentTimeLine: Bool {
         if case .chooseEventDuration = viewModel.state {
             return false
         }
+        if !(sixAM...tenPM ~= Date().secondsIntoDay) {
+            return false
+        }
         return true
+    }
+    
+    var currentTimeLine: some View {
+        Group {
+            if showCurrentTimeLine {
+                GeometryReader { timelineGeo in
+                    let y = viewModel.timelineTranslator.points(given: currentTimeSeconds, for: timelineGeo.size.height, by: .instant)
+                    let h = timelineGeo.size.height - y
+                    VStack(spacing: 0) {
+                        Rectangle().fill(Color.red)
+                            .frame(width: timelineGeo.size.width, height: 1)
+                        Spacer()
+                    }
+                    .frame(width: timelineGeo.size.width, height: h)
+                    .position(x: timelineGeo.size.width / 2, y: y + (h / 2))
+                    .id("future")
+                }
+                .onReceive(timeChange) { _ in
+                    currentTimeSeconds = Date().secondsIntoDay
+                }
+            }
+        }
     }
     
     var body: some View {
@@ -26,26 +53,17 @@ struct CalendarView: View {
             .overlay(
                 GeometryReader { timelineGeo in
                     TimeBlocks()
+                        .overlay(currentTimeLine)
                         .frame(width: timelineGeo.size.width - 90,
                                height: timelineGeo.size.height - self.timelineHeight)
                         .position(x: timelineGeo.frame(in: .local).origin.x + timelineGeo.size.width / 2 - (self.timelineHeight / 2),
                                   y: timelineGeo.size.height / 2)
                         .onAppear {
                             self.viewModel.timelineTranslator.timelineHeight = timelineGeo.size.height - self.timelineHeight
-                            self.viewModel.timelineRect = timelineGeo.frame(in: .global)
                         }
-                    if showCurrentTimeline {
-                        self.viewOfCurrentTimeline(sized: CGSize(width: timelineGeo.size.width, height: timelineGeo.size.height - self.timelineHeight))
-                    }
+                        
                 }
             )
-    }
-    
-    private func viewOfCurrentTimeline(sized size: CGSize) -> some View {
-        Rectangle().fill(Color.red)
-            .frame(width: size.width, height: 1)
-            .position(x: size.width / 2, y: viewModel.timelineTranslator.points(given: Date().secondsIntoDay, for: size.height, by: .instant))
-            .id("currentTime")
     }
 }
 
@@ -73,7 +91,8 @@ struct TimeLines: View {
             } else {
                 LabeledTimeLine(String(hour > 12 ? hour - 12 : hour), rightPaddingInset: 10)
             }
-        }.opacity(hour % 6 == 0 ? 1 : 0.38)
+        }
+        .opacity(hour % 6 == 0 ? 1 : 0.38)
     }
 }
 
@@ -101,7 +120,8 @@ struct TimeLine: View {
         GeometryReader { geo in
             VStack {
                 Spacer()
-                Rectangle().fill().frame(width: geo.size.width, height: 1)
+                Rectangle().fill()
+                    .frame(width: geo.size.width, height: 1)
                 Spacer()
             }
         }
@@ -167,11 +187,12 @@ struct TimeBlocks: View {
                     .cornerRadius(3)
                     .overlay(
                         GeometryReader { geo in
-                            Color.clear.onAppear {
-                                self.viewModel.updateArea(of: availableTime.id, to: geo.frame(in: .global))
-                            }
+                            Color.clear.preference(key: AvailTimeFramePreferenceKey.self, value: geo.frame(in: .global))
                         }
                     )
+                    .onPreferenceChange(AvailTimeFramePreferenceKey.self) { value in
+                        self.viewModel.updateArea(of: availableTime.id, to: value)
+                    }
                     .frame(width: size.width, height: blockHeight, alignment: .leading)
                     .position(x: size.width / 2, y: y + (blockHeight / 2))
             }
@@ -361,10 +382,18 @@ struct Triangle: Shape {
     }
 }
 
-struct CalendarView_Previews: PreviewProvider {
-//    static let scheduler = ViewModel(dataModel: Model.mock())
+struct AvailTimeFramePreferenceKey: PreferenceKey {
+    typealias Value = CGRect
     
+    static var defaultValue: CGRect = .zero
+    
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+struct CalendarView_Previews: PreviewProvider {
     static var previews: some View {
-        CalendarView() // .environmentObject(scheduler)
+        CalendarView()
     }
 }

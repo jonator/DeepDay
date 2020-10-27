@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: ViewModel
-    var topInset: CGFloat?
 
     var toDos: some View {
         VStack(alignment: .trailing) {
@@ -37,13 +36,14 @@ struct ContentView: View {
 
     var todoOverlayPlaceholder: some View {
         Group {
-            if case .draggingItem(let id, _, offSet: let offset, _, _, _) = viewModel.state {
+            if case .draggingItem(let id, startPoint: let startPoint, point: let point, _) = viewModel.state {
                 if let todo = viewModel.attemptGetToDo(by: id) {
                     let toDoArea = viewModel.itemAreas[id]!
                     let toDoPoint = CGPoint(x: toDoArea.midX, y: toDoArea.midY)
+                    let timelineOffset = ToDoItem.size.width - (viewModel.timelineRect?.origin.x ?? 0)
                     DragToDoPlaceholder(todo: todo, state: viewModel.state)
                         .position(toDoPoint)
-                        .offset(offset)
+                        .offset(CGSize(width: point.x - startPoint.x + timelineOffset, height: point.y - startPoint.y))
                 }
             }
         }
@@ -62,14 +62,13 @@ struct ContentView: View {
                             timeline
                                 .id("timelinecontent")
                             GeometryReader{ geo in
-                                let offset =  geo.frame(in: .named("timeline")).minY
-                                Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: offset)
+                                let timelineRect = geo.frame(in: .global)
+                                Color.clear.preference(key: TimelineRectPreferenceKey.self, value: timelineRect)
                             }
                         }
                     }
-                    .coordinateSpace(name: "timeline")
-                    .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                        viewModel.timelineContentOffset = value
+                    .onPreferenceChange(TimelineRectPreferenceKey.self) { value in
+                        viewModel.timelineRect = value
                     }
                     .id("timeline")
                 }
@@ -84,22 +83,21 @@ struct ContentView: View {
     }
 }
 
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    typealias Value = CGFloat
-    
-    static var defaultValue: CGFloat = .zero
-    
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-
 struct SectionHeaderText: View {
     var text: String
     var body: some View {
         Text(text).font(.largeTitle)
             .padding([.top, .bottom], 10)
+    }
+}
+
+struct TimelineRectPreferenceKey: PreferenceKey {
+    typealias Value = CGRect
+    
+    static var defaultValue: CGRect = .zero
+    
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
