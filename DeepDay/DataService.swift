@@ -38,6 +38,7 @@ class DataService {
     
     init(for delegate: DataProviderDelegate) {
         self.delegate = delegate
+        NotificationCenter.default.addObserver(self, selector: #selector(storeChanged), name: .EKEventStoreChanged, object: store)
     }
         
     public func request(data fetch: Fetch) {
@@ -84,6 +85,12 @@ class DataService {
         }
     }
     
+    @objc func storeChanged(_ notification: Notification) {
+        print("changed", notification)
+        request(data: .pastMonthEvents)
+        request(data: .incompleteReminders)
+    }
+    
     // MARK: - authorization
     
     private func requestReminderAccess(completion: @escaping EKEventStoreRequestAccessCompletionHandler) {
@@ -101,5 +108,28 @@ class DataService {
         
         let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMorning)!
         return store.predicateForEvents(withStart: thisMorning, end: nextMonth, calendars: nil)
+    }
+    
+    // MARK: - changing the store
+    
+    @discardableResult
+    public func createEvent(titled title: String, startDate: Date, endDate: Date) -> Bool {
+        do {
+            let newEvent = EKEvent(eventStore: store)
+            newEvent.calendar = store.defaultCalendarForNewEvents
+            newEvent.startDate = startDate
+            newEvent.endDate = endDate
+            newEvent.title = title
+            newEvent.notes = "Created by DeepDay"
+            let back5minsSecs = -300
+            let alarm = EKAlarm(relativeOffset: TimeInterval(back5minsSecs))
+            newEvent.addAlarm(alarm)
+            try store.save(newEvent, span: .thisEvent)
+            request(data: .pastMonthEvents)
+            return true
+        }
+        catch {
+            return false
+        }
     }
 }
