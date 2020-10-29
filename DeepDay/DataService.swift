@@ -6,7 +6,6 @@
 //
 
 import EventKit
-import Foundation
 
 protocol DataProviderDelegate {
     func receive(events: [EKEvent])
@@ -16,7 +15,7 @@ protocol DataProviderDelegate {
 
 class DataService {
     enum Fetch {
-        case pastMonthEvents
+        case nextMonthEvents
         case incompleteReminders
     }
 
@@ -44,7 +43,7 @@ class DataService {
     public func request(data fetch: Fetch) {
         DispatchQueue.main.async {
             switch fetch {
-            case .pastMonthEvents:
+            case .nextMonthEvents:
                 let getEvents = {
                     let events = self.store.events(matching: self.nextMonthEventsPredicate()).filter { !$0.isAllDay && $0.startSeconds >= sixAM && $0.endSeconds <= tenPM }
                     self.delegate.receive(events: events)
@@ -85,9 +84,9 @@ class DataService {
         }
     }
     
-    @objc func storeChanged(_ notification: Notification) {
-        print("changed", notification)
-        request(data: .pastMonthEvents)
+    @objc
+    func storeChanged(_ notification: Notification) {
+        request(data: .nextMonthEvents)
         request(data: .incompleteReminders)
     }
     
@@ -113,19 +112,10 @@ class DataService {
     // MARK: - changing the store
     
     @discardableResult
-    public func createEvent(titled title: String, startDate: Date, endDate: Date) -> Bool {
+    public func createEvent(titled title: String, from reminder: EKReminder, startDate: Date, endDate: Date) -> Bool {
         do {
-            let newEvent = EKEvent(eventStore: store)
-            newEvent.calendar = store.defaultCalendarForNewEvents
-            newEvent.startDate = startDate
-            newEvent.endDate = endDate
-            newEvent.title = title
-            newEvent.notes = "Created by DeepDay"
-            let back5minsSecs = -300
-            let alarm = EKAlarm(relativeOffset: TimeInterval(back5minsSecs))
-            newEvent.addAlarm(alarm)
+            let newEvent = EKEvent(for: store, from: reminder, start: startDate, end: endDate, title: title)
             try store.save(newEvent, span: .thisEvent)
-            request(data: .pastMonthEvents)
             return true
         }
         catch {

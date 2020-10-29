@@ -45,7 +45,7 @@ struct ToDosView: View {
         VStack {
             Group {
                 if todos.count > 0 {
-                    ForEach(self.todos) { todo in
+                    ForEach(self.todos.sorted(by: { (a, b) in a.scheduledEventsID.count < b.scheduledEventsID.count })) { todo in
                         GeometryReader { geo in
                             ToDoItem(todo: todo)
                                 .onTapGesture { self.selectToDo?(todo.id) }
@@ -104,6 +104,7 @@ struct ToDoItem: View {
             .overlay(
                 HStack {
                     Text(todo.title)
+                        .if(todo.scheduledEventsID.count > 0) { $0.italic() }
                         .foregroundColor(Color.white)
                         .padding(.leading, 10)
                         .lineLimit(2)

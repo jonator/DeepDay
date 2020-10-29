@@ -10,11 +10,8 @@ import Foundation
 
 class Model: ObservableObject {
     var dataProvider: DataService?
-    @Published private var todos: [String: EKReminder]
-    @Published private var events: [String: EKEvent]
-    var keys: [String] {
-        return [String](todos.keys) + [String](events.keys)
-    }
+    @Published private var todos: [String: EKReminder] = [:]
+    @Published private var events: [String: EKEvent] = [:]
     
     // MARK: - todos
     
@@ -38,7 +35,7 @@ class Model: ObservableObject {
         
         return
             [EKEvent](events.filter { _, event in dayInterval?.contains(event.date) ?? false }.values)
-                .sorted(by: { $0.startSeconds == $1.startSeconds ? $0.timeInterval < $1.timeInterval : $0.startSeconds < $1.startSeconds })
+                .sorted(by: { $0.startSeconds == $1.startSeconds ? $0.duration < $1.duration : $0.startSeconds < $1.startSeconds })
     }
     
     func getEvent(by id: String) -> EKEvent? {
@@ -52,22 +49,17 @@ class Model: ObservableObject {
             let now = Date()
             let start = now.dateFromSecondsIntoToday(seconds: start)
             let end = now.dateFromSecondsIntoToday(seconds: end)
-            dp.createEvent(titled: todo.title, startDate: start, endDate: end)
+            dp.createEvent(titled: todo.title, from: todo, startDate: start, endDate: end)
         }
     }
     
     // MARK: - init
     
-    private init() {
-        todos = [:]
-        events = [:]
-    }
-    
     class func fromUserEventData() -> Model {
         let emptyModel = Model()
         let provider = DataService(for: emptyModel)
         
-        provider.request(data: .pastMonthEvents)
+        provider.request(data: .nextMonthEvents)
         provider.request(data: .incompleteReminders)
         
         emptyModel.dataProvider = provider

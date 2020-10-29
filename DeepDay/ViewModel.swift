@@ -44,20 +44,14 @@ class ViewModel: ObservableObject {
     var horizontalScrollOffset = CGFloat.zero
     private let model: Model
     var timelineTranslator = TimelinePointTranslator()
-    var didScrollToCurrentTime = false
+    var didScrollToFutureTime = false
     var timelineRect: CGRect? {
         didSet {
-            if !didScrollToCurrentTime {
-                schedulerScrollProxy?.scrollTo("future", anchor: .top)
-                didScrollToCurrentTime = true
-            }
+            scrollToFutureTimeOnTimeline()
         }
     }
     var schedulerScrollProxy: ScrollViewProxy?
     private(set) var itemAreas = [String: CGRect]()
-    
-    static let sixAM = 60 * 60 * 6
-    static let tenPM = 60 * 60 * 22
     
     // MARK: - presentation
     
@@ -104,8 +98,6 @@ class ViewModel: ObservableObject {
     // MARK: - state machine
 
     // Only set state here
-    
-    // MARK: - > scheduling event
     
     func itemDragged(_ id: String, _ point: CGPoint, _ dragStart: CGPoint) {
         switch state {
@@ -159,21 +151,20 @@ class ViewModel: ObservableObject {
     func itemDropped(_ id: String, _ point: CGPoint) {
         switch state {
         case .draggingItem:
-            if let itemID = item(potentiallyHitBy: point) {
-                if let todo = model.getToDo(by: id),
-                   let availableTime = todaysAvailTimes.first(where: { $0.id == itemID })
-                {
-                    let bounds = (availableTime.startSeconds, availableTime.endSeconds)
-                    state = .chooseEventDuration(todoID: todo.id,
-                                                 startSeconds: availableTime.startSeconds,
-                                                 endSeconds: availableTime.endSeconds,
-                                                 startDelta: 0,
-                                                 endDelta: 0,
-                                                 calendarBounds: bounds,
-                                                 draggedBounds: (false, false))
-                } else {
-                    state = .idle
-                }
+            if let itemID = item(potentiallyHitBy: point),
+               let todo = model.getToDo(by: id),
+               let availableTime = todaysAvailTimes.first(where: { $0.id == itemID })
+            {
+                let bounds = (availableTime.startSeconds, availableTime.endSeconds)
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                state = .chooseEventDuration(todoID: todo.id,
+                                             startSeconds: availableTime.startSeconds,
+                                             endSeconds: availableTime.endSeconds,
+                                             startDelta: 0,
+                                             endDelta: 0,
+                                             calendarBounds: bounds,
+                                             draggedBounds: (false, false))
             } else {
                 state = .idle
             }
@@ -315,8 +306,6 @@ class ViewModel: ObservableObject {
         }
     }
     
-    // MARK: - > selecting item
-    
     func selectToDo(of id: String) {
         if case .idle = state {
             state = .toDoSelected(id)
@@ -434,7 +423,7 @@ class ViewModel: ObservableObject {
     private class func availableTimes(in events: [EKEvent]) -> [AvailableTime] {
         var schedulableTimes: [AvailableTime] = []
         let curTime = Date().secondsIntoDay
-        let enoughTime = { (start: Int, end: Int) in end - start > halfHour }
+        let enoughTime = { (start: Int, end: Int) in end - start >= halfHour }
         let appendTime = { (id: String, start: Int, end: Int) in
             var s = start
             if end < curTime {
@@ -451,7 +440,7 @@ class ViewModel: ObservableObject {
         }
         
         for (i, _) in events.enumerated() {
-            if i < events.count - 2 {
+            if i < events.count - 1 {
                 let gapStart = events[i].endSeconds
                 let gapEnd = events[i + 1].startSeconds
                 if (enoughTime(gapStart, gapEnd)) {
@@ -468,6 +457,19 @@ class ViewModel: ObservableObject {
         return schedulableTimes
     }
     
+    func updateActivityType(of id: String, to activityType: ActivityType) {
+        objectWillChange.send()
+        guard let calItem: EKCalendarItem = attemptGetEvent(by: id) ?? attemptGetToDo(by: id) else { return }        
+        calItem.activityType = activityType
+    }
+    
+    func scrollToFutureTimeOnTimeline() {
+        if !didScrollToFutureTime {
+            schedulerScrollProxy?.scrollTo("future", anchor: .top)
+            didScrollToFutureTime = true
+        }
+    }
+    
     // MARK: - init viewmodel
     
     var modelListener: AnyCancellable?
@@ -482,13 +484,7 @@ class ViewModel: ObservableObject {
     }
     
     private func updateViewModelFromModel() {
-        purgeItemAreas()
         selectedDayEvents = model.events(on: selectedDay)
-    }
-    
-    private func purgeItemAreas() {
-        let keys = model.keys
-        itemAreas = itemAreas.filter { keys.contains($0.key) }
     }
 }
 

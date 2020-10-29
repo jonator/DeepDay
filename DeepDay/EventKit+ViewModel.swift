@@ -6,27 +6,48 @@
 //
 
 import EventKit
-import Foundation
 
 let halfHour = 1800
 let sixAM = 60 * 60 * 6
 let tenPM = 60 * 60 * 22
 
-enum ActivityType {
-    case shallow
-    case deep
+enum ActivityType: String {
+    case shallow = "shallow"
+    case deep = "deep"
 }
 
 extension EKCalendarItem: Identifiable {
     public var id: String { calendarItemIdentifier + calendarItemExternalIdentifier }
+    
+    private var activityTypeKey: String { calendarItemIdentifier + "activityType" }
+    
+    var activityType: ActivityType {
+        get
+        {
+            if let activityTypeRawValue = UserDefaults.standard.object(forKey: activityTypeKey) as? String {
+                return ActivityType(rawValue: activityTypeRawValue)!
+            }
+            return .shallow
+        }
+        set
+        {
+            UserDefaults.standard.set(newValue.rawValue, forKey: activityTypeKey)
+        }
+    }
 }
 
 extension EKReminder {
-    var activityType: ActivityType {
-        get {
-            return .shallow
+    private var scheduledEventsKey: String { calendarItemIdentifier + "scheduledEvents" }
+    
+    var scheduledEventsID: [String] { UserDefaults.standard.stringArray(forKey: scheduledEventsKey) ?? [] }
+    
+    func addScheduledEvent(id: String) {
+        if var existingEventIDs = UserDefaults.standard.stringArray(forKey: scheduledEventsKey) {
+            existingEventIDs.append(id)
+            UserDefaults.standard.setValue(existingEventIDs, forKey: scheduledEventsKey)
+        } else {
+            UserDefaults.standard.setValue([id], forKey: scheduledEventsKey)
         }
-        set {}
     }
 }
 
@@ -37,14 +58,20 @@ extension EKEvent {
 
     var endSeconds: Int { endDate.secondsIntoDay }
     
-    var timeInterval: TimeInterval { TimeInterval(endSeconds - startSeconds) }
+    var duration: TimeInterval { TimeInterval(endSeconds - startSeconds) }
 
     var content: String? { notes }
-
-    var activityType: ActivityType { // TODO: get from core data
-        get {
-            return .shallow
-        }
-        set {}
+    
+    convenience init(for store: EKEventStore, from reminder: EKReminder, start: Date, end: Date, title: String) {
+        self.init(eventStore: store)
+        calendar = store.defaultCalendarForNewEvents
+        startDate = start
+        endDate = end
+        self.title = title
+        notes = "Created by DeepDay"
+        let back5minsSecs = -300
+        let alarm = EKAlarm(relativeOffset: TimeInterval(back5minsSecs))
+        addAlarm(alarm)
+        reminder.addScheduledEvent(id: calendarItemIdentifier)
     }
 }

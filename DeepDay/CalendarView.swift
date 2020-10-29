@@ -34,7 +34,7 @@ struct CalendarView: View {
                     let h = timelineGeo.size.height - y
                     VStack(spacing: 0) {
                         Rectangle().fill(Color.red)
-                            .frame(width: timelineGeo.size.width, height: 1)
+                            .frame(width: timelineGeo.size.width, height: 2)
                         Spacer()
                     }
                     .frame(width: timelineGeo.size.width, height: h)
