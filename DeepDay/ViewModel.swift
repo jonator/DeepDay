@@ -429,8 +429,12 @@ class ViewModel: ObservableObject {
             if end < curTime {
                 return
             }
-            if curTime >= start && curTime < end && enoughTime(curTime, end) {
-                s = curTime
+            if start...end ~= curTime {
+                if enoughTime(curTime, end) {
+                    s = curTime
+                } else {
+                    return
+                }
             }
             schedulableTimes.append(AvailableTime(id: id, startSeconds: s, endSeconds: end))
         }
@@ -465,8 +469,22 @@ class ViewModel: ObservableObject {
     
     func scrollToFutureTimeOnTimeline() {
         if !didScrollToFutureTime {
-            schedulerScrollProxy?.scrollTo("future", anchor: .top)
+            let anchor = getCurrentTimeAnchorPoint()
+            schedulerScrollProxy?.scrollTo("future", anchor: anchor)
             didScrollToFutureTime = true
+        }
+    }
+    
+    private func getCurrentTimeAnchorPoint() -> UnitPoint {
+        let currentTime = Date().secondsIntoDay
+        guard let timeline = timelineRect else { return .center }
+        let y = timelineTranslator.points(given: currentTime, for: timeline.height, by: .instant)
+        let futureTimeHeight = timeline.height - y
+        let screenHeight = UIScreen.main.bounds.height
+        if futureTimeHeight > screenHeight - 30 {
+            return .top
+        } else {
+            return .bottom
         }
     }
     
