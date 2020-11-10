@@ -9,6 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: ViewModel
+    @Environment(\.calendar) var calendar
+    
+    var nextMonthDateInterval: DateInterval {
+        return calendar.dateInterval(of: .month, for: Date())!
+    }
 
     var toDos: some View {
         VStack(alignment: .trailing) {
@@ -27,11 +32,41 @@ struct ContentView: View {
     var timeline: some View {
         VStack {
             SectionHeaderText(text: viewModel.selectedDayView)
-            CalendarView()
+            TimelineView()
                 .frame(width: 340)
         }
         .padding(.leading, 30)
         .padding(.top, 20)
+    }
+    
+    var calendarDayPicker: some View {
+        CalendarView(interval: nextMonthDateInterval) { date in
+            let baseText = Text("--").hidden().padding(10)
+            let circleColor = Color(hex: "267491")
+            let backOneDaySecs = -86400
+            let yesterday = Date().addingTimeInterval(TimeInterval(backOneDaySecs))
+            if date > yesterday {
+                baseText
+                    .background(circleColor)
+                    .clipShape(Circle())
+                    .padding(.vertical, 4)
+                    .overlay(
+                        Text(String(self.calendar.component(.day, from: date)))
+                    )
+            } else {
+                baseText
+                    .padding(.vertical, 4)
+                    .overlay(
+                        Circle().stroke(circleColor)
+                            .overlay(
+                                Text(String(self.calendar.component(.day, from: date)))
+                            )
+                    )
+            }
+        }
+        .padding(.leading, 30)
+        .padding(.top, 20)
+        .padding(.trailing, 20)
     }
 
     var todoOverlayPlaceholder: some View {
@@ -71,6 +106,7 @@ struct ContentView: View {
                         viewModel.timelineRect = value
                     }
                     .id("timeline")
+                    calendarDayPicker
                 }
                 .overlay(todoOverlayPlaceholder)
             }
