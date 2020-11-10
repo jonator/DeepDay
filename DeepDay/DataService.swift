@@ -44,22 +44,15 @@ class DataService {
         DispatchQueue.main.async {
             switch fetch {
             case .nextMonthEvents:
-                let getEvents = {
-                    let events = self.store.events(matching: self.nextMonthEventsPredicate()).filter { !$0.isAllDay && $0.startSeconds >= sixAM && $0.endSeconds <= tenPM }
+                self.fetch(EKEntityType.event, ensuring: self.isAuthorizedForEvents) {
+                    let events = self.store.events(matching: self.nextMonthEventsPredicate())
+                                           .filter { !$0.isAllDay && $0.startSeconds >= sixAM && $0.endSeconds <= tenPM }
                     self.delegate.receive(events: events)
-                }
-                if self.isAuthorizedForEvents {
-                    getEvents()
-                } else {
-                    self.requestEventAccess { isGranted, error in self.handleAccessResult(isGranted, error, onSuccess: getEvents) }
                 }
                 
             case .incompleteReminders:
-                let getReminders = {
-                    let incompleteRemindersPredicate = self.store.predicateForIncompleteReminders(withDueDateStarting: nil,
-                                                                                                  ending: nil,
-                                                                                                  calendars: nil)
-                    _ = self.store.fetchReminders(matching: incompleteRemindersPredicate) { ekReminders in
+                self.fetch(EKEntityType.reminder, ensuring: self.isAuthorizedForReminders) {
+                    _ = self.store.fetchReminders(matching: self.incompleteRemindersPredicate()) { ekReminders in
                         if let reminders = ekReminders {
                             self.delegate.receive(reminders: reminders)
                         } else {
@@ -67,10 +60,16 @@ class DataService {
                         }
                     }
                 }
-                if self.isAuthorizedForReminders {
-                    getReminders()
-                } else {
-                    self.requestReminderAccess { isGranted, error in self.handleAccessResult(isGranted, error, onSuccess: getReminders) }
+            }
+        }
+    }
+    
+    private func fetch(_ entity: EKEntityType, ensuring isAuthorized: Bool,  perform fetch: @escaping (() -> ())) {
+        if isAuthorized {
+            fetch()
+        } else {
+            store.requestAccess(to: entity) { isGranted, error in self.handleAccessResult(isGranted, error) {
+                    fetch()
                 }
             }
         }
@@ -90,16 +89,6 @@ class DataService {
         request(data: .incompleteReminders)
     }
     
-    // MARK: - authorization
-    
-    private func requestReminderAccess(completion: @escaping EKEventStoreRequestAccessCompletionHandler) {
-        store.requestAccess(to: EKEntityType.reminder, completion: completion)
-    }
-    
-    private func requestEventAccess(completion: @escaping EKEventStoreRequestAccessCompletionHandler) {
-        store.requestAccess(to: EKEntityType.event, completion: completion)
-    }
-    
     private func nextMonthEventsPredicate() -> NSPredicate {
         var calendar = Calendar.current
         calendar.timeZone = NSTimeZone.local
@@ -107,6 +96,12 @@ class DataService {
         
         let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMorning)!
         return store.predicateForEvents(withStart: thisMorning, end: nextMonth, calendars: nil)
+    }
+    
+    private func incompleteRemindersPredicate() -> NSPredicate {
+        return self.store.predicateForIncompleteReminders(withDueDateStarting: nil,
+                                                          ending: nil,
+                                                          calendars: nil)
     }
     
     // MARK: - changing the store
