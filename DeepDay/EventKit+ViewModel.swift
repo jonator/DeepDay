@@ -49,6 +49,15 @@ extension EKReminder {
             UserDefaults.standard.setValue([id], forKey: scheduledEventsKey)
         }
     }
+    
+    func ensureScheduledInto(events: [EKEvent]) {
+        UserDefaults.standard.removeObject(forKey: scheduledEventsKey)
+        for e in events {
+            if e.title == title {
+                addScheduledEvent(id: e.id)
+            }
+        }
+    }
 }
 
 extension EKEvent {

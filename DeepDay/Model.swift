@@ -73,7 +73,8 @@ extension Model: DataProviderDelegate {
     }
     
     func receive(reminders: [EKReminder]) {
-        todos = Dictionary(zip(reminders.map(\.id), reminders), uniquingKeysWith: { a, _ in a })
+        reminders.forEach { $0.ensureScheduledInto(events: Array(self.events.values)) }
+        self.todos = Dictionary(zip(reminders.map(\.id), reminders), uniquingKeysWith: { a, _ in a })
     }
     
     func receive(error: Error) {

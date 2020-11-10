@@ -27,14 +27,6 @@ class DataService {
     var store = EKEventStore()
     var delegate: DataProviderDelegate
     
-    var isAuthorizedForEvents: Bool {
-        EKEventStore.authorizationStatus(for: EKEntityType.event) == .authorized
-    }
-
-    var isAuthorizedForReminders: Bool {
-        EKEventStore.authorizationStatus(for: EKEntityType.reminder) == .authorized
-    }
-    
     init(for delegate: DataProviderDelegate) {
         self.delegate = delegate
         NotificationCenter.default.addObserver(self, selector: #selector(storeChanged), name: .EKEventStoreChanged, object: store)
@@ -44,14 +36,14 @@ class DataService {
         DispatchQueue.main.async {
             switch fetch {
             case .nextMonthEvents:
-                self.fetch(EKEntityType.event, ensuring: self.isAuthorizedForEvents) {
+                self.authorizedFetch(EKEntityType.event) {
                     let events = self.store.events(matching: self.nextMonthEventsPredicate())
                                            .filter { !$0.isAllDay && $0.startSeconds >= sixAM && $0.endSeconds <= tenPM }
                     self.delegate.receive(events: events)
                 }
                 
             case .incompleteReminders:
-                self.fetch(EKEntityType.reminder, ensuring: self.isAuthorizedForReminders) {
+                self.authorizedFetch(EKEntityType.reminder) {
                     _ = self.store.fetchReminders(matching: self.incompleteRemindersPredicate()) { ekReminders in
                         if let reminders = ekReminders {
                             self.delegate.receive(reminders: reminders)
@@ -64,11 +56,12 @@ class DataService {
         }
     }
     
-    private func fetch(_ entity: EKEntityType, ensuring isAuthorized: Bool,  perform fetch: @escaping (() -> ())) {
-        if isAuthorized {
+    private func authorizedFetch(_ entity: EKEntityType, perform fetch: @escaping (() -> ())) {
+        if EKEventStore.authorizationStatus(for: entity) == .authorized {
             fetch()
         } else {
-            store.requestAccess(to: entity) { isGranted, error in self.handleAccessResult(isGranted, error) {
+            store.requestAccess(to: entity) { isGranted, error in
+                self.handleAccessResult(isGranted, error) {
                     fetch()
                 }
             }
