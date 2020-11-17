@@ -10,8 +10,18 @@ import Foundation
 
 class Model: ObservableObject {
     var dataProvider: DataService?
+    var userCalendar: Calendar {
+        var calendar = Calendar.current
+        calendar.timeZone = NSTimeZone.local
+        return calendar
+    }
     @Published private var todos: [String: EKReminder] = [:]
-    @Published private var events: [String: EKEvent] = [:]
+    @Published private var events: [String: EKEvent] = [:] {
+        didSet {
+            getMaxEventCount()
+        }
+    }
+    var maxDayEventsCount: Int = 0
     
     // MARK: - todos
     
@@ -30,8 +40,7 @@ class Model: ObservableObject {
     // MARK: - events
     
     func events(on day: Date) -> [EKEvent] {
-        let calendar = Calendar.current
-        let dayInterval = calendar.dateInterval(of: .day, for: day)
+        let dayInterval = userCalendar.dateInterval(of: .day, for: day)
         
         return
             [EKEvent](events.filter { _, event in dayInterval?.contains(event.date) ?? false }.values)
@@ -42,13 +51,37 @@ class Model: ObservableObject {
         return events[id]
     }
     
+    func eventRatio(on day: Date) -> Double {
+        let daysEvents = events(on: day)
+        return maxDayEventsCount > 0 ? Double(daysEvents.count) / Double(maxDayEventsCount) : 0
+    }
+    
+    private func getMaxEventCount() {
+        var dayCountsDict = [Int : Int]()
+        for e in events.values {
+            let key = userCalendar.component(.day, from: e.date)
+            if let existingCount = dayCountsDict[key] {
+                let newValue = existingCount + 1
+                dayCountsDict[key] = newValue
+            } else {
+                dayCountsDict[key] = 1
+            }
+        }
+        var max = 0
+        for day in dayCountsDict.values {
+            if day > max {
+                max = day
+            }
+        }
+        maxDayEventsCount = max
+    }
+    
     // MARK: - scheduling
     
-    func scheduleEvent(fromToDo id: String, from start: Int, to end: Int) {
+    func scheduleEvent(on date: Date, fromToDo id: String, from start: Int, to end: Int) {
         if let todo = getToDo(by: id), let dp = dataProvider {
-            let now = Date()
-            let start = now.dateFromSecondsIntoToday(seconds: start)
-            let end = now.dateFromSecondsIntoToday(seconds: end)
+            let start = date.dateFromSecondsIntoDay(seconds: start)
+            let end = date.dateFromSecondsIntoDay(seconds: end)
             dp.createEvent(titled: todo.title, from: todo, startDate: start, endDate: end)
         }
     }

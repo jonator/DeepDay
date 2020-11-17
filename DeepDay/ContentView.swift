@@ -14,6 +14,11 @@ struct ContentView: View {
     var nextMonthDateInterval: DateInterval {
         return calendar.dateInterval(of: .month, for: Date())!
     }
+    
+    var yesterday: Date {
+        let backOneDaySecs = -86400
+        return Date().addingTimeInterval(TimeInterval(backOneDaySecs))
+    }
 
     var toDos: some View {
         VStack(alignment: .trailing) {
@@ -40,28 +45,46 @@ struct ContentView: View {
     }
     
     var calendarDayPicker: some View {
-        CalendarView(interval: nextMonthDateInterval) { date in
-            let baseText = Text("--").hidden().padding(10)
+        CalendarView(interval: nextMonthDateInterval, onTapDay: { date in viewModel.selectedDay = date }) { date in
+            let baseText = Text("--").hidden().padding(12)
             let circleColor = Color(hex: "267491")
-            let backOneDaySecs = -86400
-            let yesterday = Date().addingTimeInterval(TimeInterval(backOneDaySecs))
+            let dayOfMonth = self.calendar.component(.day, from: date)
+            let selectedDayOfMonth = self.calendar.component(.day, from: viewModel.selectedDay)
+            let isSelected = dayOfMonth == selectedDayOfMonth
+            let eventCountOpacity = viewModel.calendarDayDotOpacity(on: date).clamped(to: 0.3...1)
             if date > yesterday {
-                baseText
-                    .background(circleColor)
-                    .clipShape(Circle())
-                    .padding(.vertical, 4)
-                    .overlay(
-                        Text(String(self.calendar.component(.day, from: date)))
-                    )
+                if isSelected {
+                    baseText
+                        .background(circleColor)
+                        .clipShape(Circle())
+                        .padding(.vertical, 4)
+                        .overlay(
+                            Text(String(dayOfMonth))
+                                .foregroundColor(Color.white)
+                                .fontWeight(.bold)
+                        )
+                        .opacity(eventCountOpacity)
+                } else {
+                    baseText
+                        .background(circleColor)
+                        .clipShape(Circle())
+                        .padding(.vertical, 4)
+                        .overlay(
+                            Text(String(dayOfMonth))
+                                .foregroundColor(Color.white)
+                        )
+                        .opacity(eventCountOpacity)
+                }
             } else {
                 baseText
                     .padding(.vertical, 4)
                     .overlay(
                         Circle().stroke(circleColor)
                             .overlay(
-                                Text(String(self.calendar.component(.day, from: date)))
+                                Text(String(dayOfMonth))
                             )
                     )
+                    .opacity(eventCountOpacity)
             }
         }
         .padding(.leading, 30)

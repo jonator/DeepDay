@@ -8,16 +8,24 @@
 import SwiftUI
 
 extension Date {
-    var secondsIntoDay: Int {
+    private var calendar: Calendar {
         var calendar = Calendar.current
         calendar.timeZone = NSTimeZone.local
+        return calendar
+    }
+    
+    var secondsIntoDay: Int {
         let startOfDay = calendar.startOfDay(for: self)
         return Int(self.timeIntervalSince(startOfDay))
     }
     
-    func dateFromSecondsIntoToday(seconds: Int) -> Date {
-        var calendar = Calendar.current
-        calendar.timeZone = NSTimeZone.local
+    var dayRange: ClosedRange<Date> {
+        let morning = calendar.startOfDay(for: self)
+        let midnight = morning.addingTimeInterval(TimeInterval(24 * 60 * 60))
+        return morning...midnight
+    }
+    
+    func dateFromSecondsIntoDay(seconds: Int) -> Date {
         let startOfDay = calendar.startOfDay(for: self)
         let elapsedTime = TimeInterval(seconds)
         return startOfDay.addingTimeInterval(elapsedTime)
@@ -84,5 +92,25 @@ extension Calendar {
         }
 
         return dates
+    }
+}
+
+extension DateFormatter {
+    static var month: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM"
+        return formatter
+    }
+
+    static var monthAndYear: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter
+    }
+}
+
+extension Comparable {
+    func clamped(to limits: ClosedRange<Self>) -> Self {
+        return min(max(self, limits.lowerBound), limits.upperBound)
     }
 }

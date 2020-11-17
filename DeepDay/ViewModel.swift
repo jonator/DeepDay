@@ -35,9 +35,12 @@ class ViewModel: ObservableObject {
     }
     
     @Published private(set) var state: State = .idle
-    @Published private(set) var selectedDay = Date() {
+    @Published var selectedDay = Date() {
         didSet {
             selectedDayEvents = model.events(on: selectedDay)
+            withAnimation {
+                schedulerScrollProxy?.scrollTo("timeline")
+            }
         }
     }
 
@@ -79,7 +82,7 @@ class ViewModel: ObservableObject {
 
     var selectedDayEvents: [EKEvent] = [] {
         didSet {
-            todaysAvailTimes = ViewModel.availableTimes(in: selectedDayEvents)
+            todaysAvailTimes = availableTimes(in: selectedDayEvents)
         }
     }
 
@@ -90,10 +93,14 @@ class ViewModel: ObservableObject {
         df.setLocalizedDateFormatFromTemplate("MMMMd")
         return df.string(from: selectedDay)
     }
+    var selectedDayIsToday: Bool {
+        selectedDay.dayRange ~= Date()
+    }
 
     func getToDos() -> [EKReminder] { model.getToDos() }
     func attemptGetToDo(by id: String) -> EKReminder? { model.getToDo(by: id) }
     func attemptGetEvent(by id: String) -> EKEvent? { model.getEvent(by: id) }
+    func calendarDayDotOpacity(on date: Date) -> Double { 1 - model.eventRatio(on: date) }
 
     // MARK: - state machine
 
@@ -257,14 +264,16 @@ class ViewModel: ObservableObject {
                                      endDelta: let endDelta,
                                      _, _) = state
         {
-            model.scheduleEvent(fromToDo: todoID, from: start + startDelta, to: end + endDelta)
+            model.scheduleEvent(on: selectedDay, fromToDo: todoID, from: start + startDelta, to: end + endDelta)
             state = .idle
         }
     }
     
     func cancelChooseEventTime() {
         DispatchQueue.main.async {
-            withAnimation { self.schedulerScrollProxy?.scrollTo("todos") }
+            withAnimation {
+                self.schedulerScrollProxy?.scrollTo("todos")
+            }
             self.state = .idle
         }
     }
@@ -420,10 +429,10 @@ class ViewModel: ObservableObject {
         }
     }
     
-    private class func availableTimes(in events: [EKEvent]) -> [AvailableTime] {
+    private func availableTimes(in events: [EKEvent]) -> [AvailableTime] {
         var schedulableTimes: [AvailableTime] = []
-        let curTime = Date().secondsIntoDay
         let enoughTime = { (start: Int, end: Int) in end - start >= halfHour }
+        let curTime = selectedDay.dayRange ~= Date() ? Date().secondsIntoDay : 0
         let appendTime = { (id: String, start: Int, end: Int) in
             var s = start
             if end < curTime {

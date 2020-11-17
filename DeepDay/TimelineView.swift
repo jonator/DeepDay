@@ -13,6 +13,7 @@ struct TimelineView: View {
     let timelineSpacing = CGFloat(90)
     
     @EnvironmentObject var viewModel: ViewModel
+    @Environment(\.calendar) var calendar
     @State var currentTimeSeconds: Int = Date().secondsIntoDay
     let timeChange = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -21,6 +22,9 @@ struct TimelineView: View {
             return false
         }
         if !(sixAM...tenPM ~= Date().secondsIntoDay) {
+            return false
+        }
+        if !(viewModel.selectedDayIsToday) {
             return false
         }
         return true
@@ -49,7 +53,7 @@ struct TimelineView: View {
     }
     
     var body: some View {
-        TimeLines(height: timelineHeight, spacing: timelineSpacing)
+        Line(height: timelineHeight, spacing: timelineSpacing)
             .overlay(
                 GeometryReader { timelineGeo in
                     TimeBlocks()
@@ -67,7 +71,7 @@ struct TimelineView: View {
     }
 }
 
-struct TimeLines: View {
+struct Line: View {
     let height: CGFloat
     let spacing: CGFloat
     
@@ -84,19 +88,19 @@ struct TimeLines: View {
         Group {
             if hour % 2 == 0 || hour == (10 + 12) {
                 if hour == 12 {
-                    LabeledTimeLine("NOON")
+                    LabeledLine("NOON")
                 } else {
-                    LabeledTimeLine(String(hour > 12 ? hour - 12 : hour), rightPaddingInset: hour % 6 == 0 || hour == (10 + 12) ? 0 : 10)
+                    LabeledLine(String(hour > 12 ? hour - 12 : hour), rightPaddingInset: hour % 6 == 0 || hour == (10 + 12) ? 0 : 10)
                 }
             } else {
-                LabeledTimeLine(String(hour > 12 ? hour - 12 : hour), rightPaddingInset: 10)
+                LabeledLine(String(hour > 12 ? hour - 12 : hour), rightPaddingInset: 10)
             }
         }
         .opacity(hour % 6 == 0 ? 1 : 0.38)
     }
 }
 
-struct LabeledTimeLine: View {
+struct LabeledLine: View {
     let text: String
     let rightPaddingInset: CGFloat
     

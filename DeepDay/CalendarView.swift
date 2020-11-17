@@ -11,10 +11,14 @@ struct CalendarView<DateView>: View where DateView: View {
     @Environment(\.calendar) var calendar
 
     let interval: DateInterval
+    let onTapDay: (Date) -> ()
     let content: (Date) -> DateView
 
-    init(interval: DateInterval, @ViewBuilder content: @escaping (Date) -> DateView) {
+    init(interval: DateInterval,
+         onTapDay: @escaping (Date) -> (),
+         @ViewBuilder content: @escaping (Date) -> DateView) {
         self.interval = interval
+        self.onTapDay = onTapDay
         self.content = content
     }
 
@@ -29,7 +33,7 @@ struct CalendarView<DateView>: View where DateView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack {
                 ForEach(months, id: \.self) { month in
-                    MonthView(month: month, content: self.content)
+                    MonthView(month: month, onTapDay: onTapDay, content: self.content)
                 }
             }
         }
@@ -40,17 +44,17 @@ fileprivate struct MonthView<DateView>: View where DateView: View {
     @Environment(\.calendar) var calendar
 
     let month: Date
-    let showHeader: Bool
+    let onTapDay: (Date) -> ()
     let content: (Date) -> DateView
 
     init(
         month: Date,
-        showHeader: Bool = true,
+        onTapDay: @escaping (Date) -> (),
         @ViewBuilder content: @escaping (Date) -> DateView
     ) {
         self.month = month
+        self.onTapDay = onTapDay
         self.content = content
-        self.showHeader = showHeader
     }
 
     private var weeks: [Date] {
@@ -67,20 +71,18 @@ fileprivate struct MonthView<DateView>: View where DateView: View {
         let component = calendar.component(.month, from: month)
         let formatter = component == 1 ? DateFormatter.monthAndYear : .month
         return Text(formatter.string(from: month))
-            .font(.title)
+            .font(.largeTitle)
             .padding()
     }
 
     var body: some View {
         VStack {
-            if showHeader {
-                header
-            }
-
+            header
             ForEach(weeks, id: \.self) { week in
-                WeekView(week: week, content: self.content)
+                WeekView(week: week, onTapDay: onTapDay, content: self.content)
             }
         }
+        .padding(1)
     }
 }
 
@@ -88,10 +90,14 @@ fileprivate struct WeekView<DateView>: View where DateView: View {
     @Environment(\.calendar) var calendar
 
     let week: Date
+    let onTapDay: (Date) -> ()
     let content: (Date) -> DateView
 
-    init(week: Date, @ViewBuilder content: @escaping (Date) -> DateView) {
+    init(week: Date,
+         onTapDay: @escaping (Date) -> (),
+         @ViewBuilder content: @escaping (Date) -> DateView) {
         self.week = week
+        self.onTapDay = onTapDay
         self.content = content
     }
 
@@ -111,25 +117,14 @@ fileprivate struct WeekView<DateView>: View where DateView: View {
                 HStack {
                     if self.calendar.isDate(self.week, equalTo: date, toGranularity: .month) {
                         self.content(date)
+                            .onTapGesture {
+                                onTapDay(date)
+                            }
                     } else {
                         self.content(date).hidden()
                     }
                 }
             }
         }
-    }
-}
-
-fileprivate extension DateFormatter {
-    static var month: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
-        return formatter
-    }
-
-    static var monthAndYear: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter
     }
 }
