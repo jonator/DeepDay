@@ -16,9 +16,7 @@ enum ActivityType: String {
     case deep = "deep"
 }
 
-extension EKCalendarItem: Identifiable {
-    public var id: String { calendarItemIdentifier + calendarItemExternalIdentifier }
-    
+extension EKCalendarItem {
     private var activityTypeKey: String { calendarItemIdentifier + "activityType" }
     
     var activityType: ActivityType {
@@ -36,7 +34,9 @@ extension EKCalendarItem: Identifiable {
     }
 }
 
-extension EKReminder {
+extension EKReminder: Identifiable {
+    public var id: String { calendarItemIdentifier }
+    
     private var scheduledEventsKey: String { calendarItemIdentifier + "scheduledEvents" }
     
     var scheduledEventsID: [String] { UserDefaults.standard.stringArray(forKey: scheduledEventsKey) ?? [] }
@@ -60,7 +60,13 @@ extension EKReminder {
     }
 }
 
-extension EKEvent {
+extension EKEvent: Identifiable {
+    public var id: String {
+        var cal = Calendar.current
+        cal.timeZone = self.timeZone ?? NSTimeZone.local
+        return calendarItemIdentifier + "\(cal.component(.month, from: self.date))\(cal.component(.day, from: date))"
+    }
+    
     var date: Date { startDate }
 
     var startSeconds: Int { startDate.secondsIntoDay }
