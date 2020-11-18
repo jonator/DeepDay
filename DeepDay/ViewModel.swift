@@ -94,7 +94,7 @@ class ViewModel: ObservableObject {
         return df.string(from: selectedDay)
     }
     var selectedDayIsToday: Bool {
-        selectedDay.dayRange ~= Date()
+        selectedDay.range ~= Date()
     }
 
     func getToDos() -> [EKReminder] { model.getToDos() }
@@ -430,9 +430,13 @@ class ViewModel: ObservableObject {
     }
     
     private func availableTimes(in events: [EKEvent]) -> [AvailableTime] {
+        if events.isEmpty {
+            return emptyDayAvailTimePartitions()
+        }
+        
         var schedulableTimes: [AvailableTime] = []
         let enoughTime = { (start: Int, end: Int) in end - start >= halfHour }
-        let curTime = selectedDay.dayRange ~= Date() ? Date().secondsIntoDay : 0
+        let curTime = selectedDay.range ~= Date() ? Date().secondsIntoDay : 0
         let appendTime = { (id: String, start: Int, end: Int) in
             var s = start
             if end < curTime {
@@ -468,6 +472,17 @@ class ViewModel: ObservableObject {
         }
         
         return schedulableTimes
+    }
+    
+    private func emptyDayAvailTimePartitions() -> [AvailableTime] {
+        if selectedDay.range ~= Date() {
+            return [AvailableTime(id: UUID().description, startSeconds: Date().secondsIntoDay, endSeconds: tenPM)]
+        } else {
+            let twelveHrsSecs = 43200
+            let firstHalfOfDay = AvailableTime(id: UUID().description, startSeconds: sixAM, endSeconds: twelveHrsSecs)
+            let secondHalfOfDay = AvailableTime(id: UUID().description, startSeconds: twelveHrsSecs, endSeconds: tenPM)
+            return [firstHalfOfDay, secondHalfOfDay]
+        }
     }
     
     func updateActivityType(of id: String, to activityType: ActivityType) {

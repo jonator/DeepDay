@@ -19,7 +19,7 @@ extension Date {
         return Int(self.timeIntervalSince(startOfDay))
     }
     
-    var dayRange: ClosedRange<Date> {
+    var range: ClosedRange<Date> {
         let morning = calendar.startOfDay(for: self)
         let midnight = morning.addingTimeInterval(TimeInterval(24 * 60 * 60))
         return morning...midnight
