@@ -16,6 +16,10 @@ enum ActivityType: String {
     case deep = "deep"
 }
 
+extension EKCalendar: Identifiable {
+    public var id: String { calendarIdentifier }
+}
+
 extension EKCalendarItem {
     private var activityTypeKey: String { calendarItemIdentifier + "activityType" }
     
@@ -31,6 +35,12 @@ extension EKCalendarItem {
         {
             UserDefaults.standard.set(newValue.rawValue, forKey: activityTypeKey)
         }
+    }
+    
+    var userCalendar: Calendar {
+        var calendar = Calendar.current
+        calendar.timeZone = timeZone ?? NSTimeZone.local
+        return calendar
     }
 }
 

@@ -9,7 +9,7 @@ import EventKit
 import Foundation
 
 class Model: ObservableObject {
-    var dataProvider: DataService?
+    var dataService: DataService?
     var userCalendar: Calendar {
         var calendar = Calendar.current
         calendar.timeZone = NSTimeZone.local
@@ -59,7 +59,7 @@ class Model: ObservableObject {
     private func getMaxEventCount() {
         var dayCountsDict = [Int : Int]()
         for e in events.values {
-            let key = userCalendar.component(.day, from: e.date)
+            let key = e.userCalendar.component(.day, from: e.date)
             if let existingCount = dayCountsDict[key] {
                 let newValue = existingCount + 1
                 dayCountsDict[key] = newValue
@@ -79,7 +79,7 @@ class Model: ObservableObject {
     // MARK: - scheduling
     
     func scheduleEvent(on date: Date, fromToDo id: String, from start: Int, to end: Int) {
-        if let todo = getToDo(by: id), let dp = dataProvider {
+        if let todo = getToDo(by: id), let dp = dataService {
             let start = date.dateFromSecondsIntoDay(seconds: start)
             let end = date.dateFromSecondsIntoDay(seconds: end)
             dp.createEvent(titled: todo.title, from: todo, startDate: start, endDate: end)
@@ -90,17 +90,17 @@ class Model: ObservableObject {
     
     class func fromUserEventData() -> Model {
         let emptyModel = Model()
-        let provider = DataService(for: emptyModel)
+        let service = DataService(for: emptyModel)
         
-        provider.request(data: .nextMonthEvents)
-        provider.request(data: .incompleteReminders)
+        service.request(data: .nextMonthEvents)
+        service.request(data: .incompleteReminders)
         
-        emptyModel.dataProvider = provider
+        emptyModel.dataService = service
         return emptyModel
     }
 }
 
-extension Model: DataProviderDelegate {
+extension Model: DataServiceDelegate {
     func receive(events: [EKEvent]) {
         self.events = Dictionary(zip(events.map(\.id), events), uniquingKeysWith: { a, _ in a })
     }

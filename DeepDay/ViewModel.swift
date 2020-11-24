@@ -43,6 +43,7 @@ class ViewModel: ObservableObject {
             }
         }
     }
+    @AppStorage("workCalendarID") var workCalendarID: String = ""
 
     var horizontalScrollOffset = CGFloat.zero
     private let model: Model
@@ -96,6 +97,10 @@ class ViewModel: ObservableObject {
     var selectedDayIsToday: Bool {
         selectedDay.range ~= Date()
     }
+    
+    lazy var calendars: [EKCalendar] = {
+        model.dataService?.requestEventCalendars() ?? []
+    }()
 
     func getToDos() -> [EKReminder] { model.getToDos() }
     func attemptGetToDo(by id: String) -> EKReminder? { model.getToDo(by: id) }

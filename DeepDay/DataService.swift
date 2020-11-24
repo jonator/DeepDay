@@ -7,7 +7,7 @@
 
 import EventKit
 
-protocol DataProviderDelegate {
+protocol DataServiceDelegate {
     func receive(events: [EKEvent])
     func receive(reminders: [EKReminder])
     func receive(error: Error)
@@ -24,10 +24,10 @@ class DataService {
         case deniedAccess
     }
     
-    var store = EKEventStore()
-    var delegate: DataProviderDelegate
+    private var store = EKEventStore()
+    var delegate: DataServiceDelegate
     
-    init(for delegate: DataProviderDelegate) {
+    init(for delegate: DataServiceDelegate) {
         self.delegate = delegate
         NotificationCenter.default.addObserver(self, selector: #selector(storeChanged), name: .EKEventStoreChanged, object: store)
     }
@@ -54,6 +54,10 @@ class DataService {
                 }
             }
         }
+    }
+    
+    public func requestEventCalendars() -> [EKCalendar] {
+        return store.calendars(for: .event)
     }
     
     private func authorizedFetch(_ entity: EKEntityType, perform fetch: @escaping (() -> ())) {

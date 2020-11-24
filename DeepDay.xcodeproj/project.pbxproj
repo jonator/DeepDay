@@ -22,7 +22,13 @@
 		9532BBD02530CE86002F80E4 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9532BBC72530CE86002F80E4 /* TimelineView.swift */; };
 		9532BBE12530D484002F80E4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9532BBE02530D484002F80E4 /* ContentView.swift */; };
 		9565688F255B2E2B00AAA8C4 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9565688E255B2E2B00AAA8C4 /* CalendarView.swift */; };
-		95AA81E3253535BF00554E7A /* EventKit+ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AA81E2253535BF00554E7A /* EventKit+ViewModel.swift */; };
+		956780272564A755002E42FF /* CalendarTipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956780262564A755002E42FF /* CalendarTipsView.swift */; };
+		95810669256D9D9700B0D4D9 /* PrioritizeTime.mov in Resources */ = {isa = PBXBuildFile; fileRef = 95810668256D9D9700B0D4D9 /* PrioritizeTime.mov */; };
+		9581066E256D9DA500B0D4D9 /* AVLoopPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9581066D256D9DA500B0D4D9 /* AVLoopPlayerView.swift */; };
+		9581067C256DB3AA00B0D4D9 /* IntelligentScheduling.mov in Resources */ = {isa = PBXBuildFile; fileRef = 9581067B256DB3AA00B0D4D9 /* IntelligentScheduling.mov */; };
+		95AA81E3253535BF00554E7A /* EventKitExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AA81E2253535BF00554E7A /* EventKitExtensions.swift */; };
+		95BE3DC42567006000A4618B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BE3DC32567006000A4618B /* OnboardingView.swift */; };
+		95BE3DCC256703B600A4618B /* SchedulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BE3DCB256703B600A4618B /* SchedulerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,7 +70,13 @@
 		9532BBC72530CE86002F80E4 /* TimelineView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 		9532BBE02530D484002F80E4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9565688E255B2E2B00AAA8C4 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
-		95AA81E2253535BF00554E7A /* EventKit+ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EventKit+ViewModel.swift"; sourceTree = "<group>"; };
+		956780262564A755002E42FF /* CalendarTipsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTipsView.swift; sourceTree = "<group>"; };
+		95810668256D9D9700B0D4D9 /* PrioritizeTime.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = PrioritizeTime.mov; sourceTree = "<group>"; };
+		9581066D256D9DA500B0D4D9 /* AVLoopPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVLoopPlayerView.swift; sourceTree = "<group>"; };
+		9581067B256DB3AA00B0D4D9 /* IntelligentScheduling.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = IntelligentScheduling.mov; sourceTree = "<group>"; };
+		95AA81E2253535BF00554E7A /* EventKitExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitExtensions.swift; sourceTree = "<group>"; };
+		95BE3DC32567006000A4618B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		95BE3DCB256703B600A4618B /* SchedulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,17 +129,23 @@
 			children = (
 				9532BB8E2530CE62002F80E4 /* DeepDayApp.swift */,
 				9532BBE02530D484002F80E4 /* ContentView.swift */,
+				95BE3DC32567006000A4618B /* OnboardingView.swift */,
+				95BE3DCB256703B600A4618B /* SchedulerView.swift */,
 				9532BBC12530CE85002F80E4 /* BottomSheetView.swift */,
 				9532BBC72530CE86002F80E4 /* TimelineView.swift */,
 				9565688E255B2E2B00AAA8C4 /* CalendarView.swift */,
 				9532BBBF2530CE85002F80E4 /* ToDosView.swift */,
+				956780262564A755002E42FF /* CalendarTipsView.swift */,
+				9581066D256D9DA500B0D4D9 /* AVLoopPlayerView.swift */,
 				9532BBC22530CE85002F80E4 /* DesignPalette.swift */,
 				9532BBC52530CE85002F80E4 /* DataService.swift */,
 				9532BBC42530CE85002F80E4 /* ViewModel.swift */,
 				9532BBC32530CE85002F80E4 /* Model.swift */,
-				95AA81E2253535BF00554E7A /* EventKit+ViewModel.swift */,
+				95AA81E2253535BF00554E7A /* EventKitExtensions.swift */,
 				9532BBC62530CE86002F80E4 /* Extensions.swift */,
 				9532BB922530CE64002F80E4 /* Assets.xcassets */,
+				95810668256D9D9700B0D4D9 /* PrioritizeTime.mov */,
+				9581067B256DB3AA00B0D4D9 /* IntelligentScheduling.mov */,
 				9532BB972530CE64002F80E4 /* Info.plist */,
 				9532BB942530CE64002F80E4 /* Preview Content */,
 			);
@@ -176,6 +194,8 @@
 			dependencies = (
 			);
 			name = DeepDay;
+			packageProductDependencies = (
+			);
 			productName = DeepDay;
 			productReference = 9532BB8B2530CE62002F80E4 /* DeepDay.app */;
 			productType = "com.apple.product-type.application";
@@ -247,6 +267,8 @@
 				Base,
 			);
 			mainGroup = 9532BB822530CE62002F80E4;
+			packageReferences = (
+			);
 			productRefGroup = 9532BB8C2530CE62002F80E4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -264,6 +286,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				9532BB962530CE64002F80E4 /* Preview Assets.xcassets in Resources */,
+				95810669256D9D9700B0D4D9 /* PrioritizeTime.mov in Resources */,
+				9581067C256DB3AA00B0D4D9 /* IntelligentScheduling.mov in Resources */,
 				9532BB932530CE64002F80E4 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -289,18 +313,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9581066E256D9DA500B0D4D9 /* AVLoopPlayerView.swift in Sources */,
+				95BE3DCC256703B600A4618B /* SchedulerView.swift in Sources */,
 				9532BBCC2530CE86002F80E4 /* Model.swift in Sources */,
 				9532BBC82530CE86002F80E4 /* ToDosView.swift in Sources */,
 				9565688F255B2E2B00AAA8C4 /* CalendarView.swift in Sources */,
 				9532BBCB2530CE86002F80E4 /* DesignPalette.swift in Sources */,
 				9532BBCA2530CE86002F80E4 /* BottomSheetView.swift in Sources */,
 				9532BBCF2530CE86002F80E4 /* Extensions.swift in Sources */,
+				956780272564A755002E42FF /* CalendarTipsView.swift in Sources */,
 				9532BBD02530CE86002F80E4 /* TimelineView.swift in Sources */,
-				95AA81E3253535BF00554E7A /* EventKit+ViewModel.swift in Sources */,
+				95AA81E3253535BF00554E7A /* EventKitExtensions.swift in Sources */,
 				9532BBE12530D484002F80E4 /* ContentView.swift in Sources */,
 				9532BBCE2530CE86002F80E4 /* DataService.swift in Sources */,
 				9532BBCD2530CE86002F80E4 /* ViewModel.swift in Sources */,
 				9532BB8F2530CE62002F80E4 /* DeepDayApp.swift in Sources */,
+				95BE3DC42567006000A4618B /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
